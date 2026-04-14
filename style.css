@@ -1,0 +1,35 @@
+body {
+  font-family: Arial;
+  background: #0d0f14;
+  color: white;
+  text-align: center;
+}
+
+header {
+  padding: 20px;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.inputs, .output {
+  background: #1a1e2a;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+input, textarea {
+  display: block;
+  margin: 10px auto;
+  padding: 10px;
+  width: 200px;
+}
+
+button {
+  margin: 5px;
+  padding: 10px;
+  cursor: pointer;
+}
