@@ -3,147 +3,240 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Disk Scheduling Simulator</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>DiskSim — Disk Scheduling Simulator</title>
+
+  <!-- Google Fonts: Orbitron (display) + Share Tech Mono (terminal) + Inter (body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js for comparison bar chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- ===== HEADER ===== -->
+  <!-- Animated grid background layer -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <!-- CRT scanline overlay -->
+  <div class="scanline" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       HEADER
+  ═══════════════════════════════════════════════ -->
   <header class="site-header">
-    <div class="header-badge">OS Project</div>
-    <h1 class="site-title">Disk Scheduling<br/><span>Simulator</span></h1>
-    <p class="site-desc">
-      Visualize how FCFS, SSTF, SCAN, and LOOK algorithms move the disk head
-      across tracks. Enter your request queue and watch each algorithm in action.
-    </p>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-bracket">[</span>
+        <span class="logo-text">DISK<span class="logo-accent">SIM</span></span>
+        <span class="logo-bracket">]</span>
+      </div>
+      <p class="header-sub">Disk Scheduling Algorithm Visualizer</p>
+    </div>
+    <div class="header-badges">
+      <span class="badge">v2.0</span>
+      <span class="badge badge--green">◉ LIVE</span>
+    </div>
   </header>
 
-  <!-- ===== MAIN LAYOUT ===== -->
-  <main class="layout">
+  <!-- ═══════════════════════════════════════════════
+       MAIN LAYOUT — two-column grid
+  ═══════════════════════════════════════════════ -->
+  <main class="main-grid">
 
-    <!-- LEFT: Input Panel -->
-    <section class="panel input-panel">
-      <h2 class="panel-title">Configuration</h2>
+    <!-- ──────────────────────────────────────
+         LEFT PANEL: Input & Controls
+    ────────────────────────────────────── -->
+    <section class="panel panel--input" aria-label="Simulation Input">
 
-      <div class="field-group">
-        <label for="diskSize">Disk Size <span class="hint">(total tracks)</span></label>
-        <input type="number" id="diskSize" placeholder="e.g. 200" min="2" max="9999" />
+      <div class="panel-header">
+        <span class="panel-icon" aria-hidden="true">⌨</span>
+        <h2 class="panel-title">PARAMETERS</h2>
       </div>
 
+      <!-- Disk Request Queue -->
       <div class="field-group">
-        <label for="headPos">Initial Head Position</label>
-        <input type="number" id="headPos" placeholder="e.g. 53" min="0" />
-      </div>
-
-      <div class="field-group">
-        <label for="numReq">Number of Requests</label>
-        <input type="number" id="numReq" placeholder="e.g. 8" min="1" max="20" />
-      </div>
-
-      <div class="field-group">
-        <label for="requests">
-          Request Queue
-          <span class="hint">(space or comma separated)</span>
+        <label class="field-label" for="diskQueue">
+          Disk Request Queue
+          <span class="field-hint">Comma-separated cylinder numbers (0 – 199)</span>
         </label>
-        <textarea id="requests" rows="3" placeholder="e.g. 98 183 37 122 14 65 67 124"></textarea>
+        <div class="input-row">
+          <input
+            type="text"
+            id="diskQueue"
+            class="field-input"
+            placeholder="98, 183, 37, 122, 14, 124, 65, 67"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="btn btn--ghost btn--sm" id="randomBtn" title="Generate random queue">
+            ⚄ Random
+          </button>
+        </div>
+        <!-- Validation error -->
+        <p class="field-error hidden" id="queueError" role="alert">
+          ⚠ Enter valid integers between 0 and 199, separated by commas.
+        </p>
       </div>
 
-      <div id="errorBox" class="error-box hidden"></div>
+      <!-- Initial Head Position -->
+      <div class="field-group">
+        <label class="field-label" for="headPosition">
+          Initial Head Position
+          <span class="field-hint">Starting cylinder (0 – 199)</span>
+        </label>
+        <input
+          type="number"
+          id="headPosition"
+          class="field-input"
+          placeholder="53"
+          min="0"
+          max="199"
+        />
+        <p class="field-error hidden" id="headError" role="alert">
+          ⚠ Head position must be an integer between 0 and 199.
+        </p>
+      </div>
 
-      <!-- Algorithm Buttons -->
-      <div class="algo-buttons">
-        <button class="btn-algo" data-algo="FCFS">
-          <span class="btn-label">FCFS</span>
-          <span class="btn-sub">First Come First Served</span>
+      <!-- Scan Direction (shown only for SCAN / LOOK) -->
+      <div class="field-group" id="directionGroup" style="display:none;">
+        <label class="field-label">Initial Scan Direction</label>
+        <div class="toggle-row">
+          <button class="btn btn--toggle active" id="dirLeft" data-dir="left">◀ Toward 0</button>
+          <button class="btn btn--toggle" id="dirRight" data-dir="right">Toward 199 ▶</button>
+        </div>
+      </div>
+
+      <!-- Algorithm Selector -->
+      <div class="field-group">
+        <label class="field-label">Scheduling Algorithm</label>
+        <div class="algo-grid">
+          <button class="btn btn--algo active" data-algo="FCFS">
+            <span class="algo-name">FCFS</span>
+            <span class="algo-desc">First Come First Served</span>
+          </button>
+          <button class="btn btn--algo" data-algo="SSTF">
+            <span class="algo-name">SSTF</span>
+            <span class="algo-desc">Shortest Seek Time First</span>
+          </button>
+          <button class="btn btn--algo" data-algo="SCAN">
+            <span class="algo-name">SCAN</span>
+            <span class="algo-desc">Elevator Algorithm</span>
+          </button>
+          <button class="btn btn--algo" data-algo="LOOK">
+            <span class="algo-name">LOOK</span>
+            <span class="algo-desc">Optimized SCAN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary Actions -->
+      <div class="action-row">
+        <button class="btn btn--primary" id="runBtn">
+          <span class="btn-icon">▶</span> RUN SIMULATION
         </button>
-        <button class="btn-algo" data-algo="SSTF">
-          <span class="btn-label">SSTF</span>
-          <span class="btn-sub">Shortest Seek Time First</span>
-        </button>
-        <button class="btn-algo" data-algo="SCAN">
-          <span class="btn-label">SCAN</span>
-          <span class="btn-sub">Elevator Algorithm</span>
-        </button>
-        <button class="btn-algo" data-algo="LOOK">
-          <span class="btn-label">LOOK</span>
-          <span class="btn-sub">Optimized SCAN</span>
+        <button class="btn btn--secondary" id="compareBtn">
+          <span class="btn-icon">⇄</span> COMPARE ALL
         </button>
       </div>
 
-      <button class="btn-reset" id="resetBtn">↺ Reset</button>
+      <button class="btn btn--ghost btn--reset" id="resetBtn">↺ Reset</button>
+
     </section>
 
-    <!-- RIGHT: Results Panel -->
-    <section class="panel result-panel" id="resultPanel">
+    <!-- ──────────────────────────────────────
+         RIGHT PANEL: Results & Visualization
+    ────────────────────────────────────── -->
+    <section class="panel panel--results" aria-label="Simulation Results">
 
-      <!-- Placeholder shown before any algorithm runs -->
-      <div class="placeholder" id="placeholder">
-        <div class="placeholder-icon">◎</div>
-        <p>Configure inputs on the left,<br/>then click an algorithm to simulate.</p>
+      <!-- Idle placeholder -->
+      <div class="results-placeholder" id="placeholder" aria-live="polite">
+        <div class="placeholder-icon" aria-hidden="true">◈</div>
+        <p>Configure parameters on the left<br/>and run a simulation to see results.</p>
       </div>
 
-      <!-- Results (hidden until algo runs) -->
-      <div id="results" class="hidden">
+      <!-- Results content — hidden until a simulation completes -->
+      <div class="results-content hidden" id="resultsContent">
 
-        <!-- Algorithm name + seek time -->
-        <div class="result-header">
-          <div>
-            <div class="result-algo-name" id="resAlgoName">FCFS</div>
-            <div class="result-algo-full" id="resAlgoFull">First Come First Served</div>
+        <!-- Stat cards row -->
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">Algorithm</div>
+            <div class="stat-value" id="statAlgo">—</div>
           </div>
-          <div class="seek-badge">
-            <div class="seek-label">Total Seek Time</div>
-            <div class="seek-value" id="resSeekTime">0</div>
+          <div class="stat-card stat-card--accent">
+            <div class="stat-label">Total Seek Time</div>
+            <div class="stat-value" id="statSeek">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Requests Served</div>
+            <div class="stat-value" id="statCount">—</div>
           </div>
         </div>
 
-        <!-- Execution order -->
-        <div class="result-section">
-          <h3 class="section-label">Execution Order</h3>
-          <div class="order-track" id="resOrder"></div>
+        <!-- Execution order pills -->
+        <div class="section-block">
+          <h3 class="block-title">
+            <span class="title-line" aria-hidden="true"></span>
+            EXECUTION ORDER
+          </h3>
+          <div class="exec-track" id="execTrack" aria-label="Execution order"></div>
         </div>
 
-        <!-- Canvas visualization -->
-        <div class="result-section">
-          <h3 class="section-label">Head Movement Graph</h3>
+        <!-- Canvas-based disk arm movement chart -->
+        <div class="section-block">
+          <h3 class="block-title">
+            <span class="title-line" aria-hidden="true"></span>
+            DISK ARM MOVEMENT
+          </h3>
           <div class="canvas-wrap">
-            <canvas id="diskCanvas"></canvas>
+            <canvas id="diskCanvas" role="img" aria-label="Disk arm movement visualization"></canvas>
           </div>
         </div>
 
-        <!-- Step-by-step table -->
-        <div class="result-section">
-          <h3 class="section-label">Step-by-Step Breakdown</h3>
-          <div class="table-wrap">
-            <table class="steps-table">
-              <thead>
-                <tr>
-                  <th>Step</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Distance</th>
-                </tr>
-              </thead>
-              <tbody id="stepsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
+      </div><!-- /results-content -->
     </section>
 
   </main>
 
-  <!-- Comparison bar (shown after at least 2 algos run) -->
-  <section class="compare-section hidden" id="compareSection">
-    <h2 class="compare-title">Algorithm Comparison</h2>
-    <div class="compare-bars" id="compareBars"></div>
-  </section>
+  <!-- ═══════════════════════════════════════════════
+       COMPARISON MODAL
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay hidden" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="modalHeading">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalHeading">⇄ ALGORITHM COMPARISON</h3>
+        <button class="modal-close" id="modalClose" aria-label="Close comparison modal">✕</button>
+      </div>
+      <div class="modal-body">
 
+        <!-- Summary table -->
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Algorithm</th>
+              <th>Total Seek Time</th>
+              <th>Relative Performance</th>
+            </tr>
+          </thead>
+          <tbody id="compareBody"></tbody>
+        </table>
+
+        <!-- Bar chart -->
+        <div class="chart-wrap">
+          <canvas id="compareChart" role="img" aria-label="Algorithm comparison bar chart"></canvas>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════ -->
   <footer class="site-footer">
-    Disk Scheduling Simulator &mdash; Operating Systems Project
+    <p>DiskSim &mdash; OS Concepts Visualizer &mdash; GitHub Pages Ready</p>
   </footer>
 
   <script src="script.js"></script>
