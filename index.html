@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Disk Scheduling Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header">
+    <div class="header-badge">OS Project</div>
+    <h1 class="site-title">Disk Scheduling<br/><span>Simulator</span></h1>
+    <p class="site-desc">
+      Visualize how FCFS, SSTF, SCAN, and LOOK algorithms move the disk head
+      across tracks. Enter your request queue and watch each algorithm in action.
+    </p>
+  </header>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <main class="layout">
+
+    <!-- LEFT: Input Panel -->
+    <section class="panel input-panel">
+      <h2 class="panel-title">Configuration</h2>
+
+      <div class="field-group">
+        <label for="diskSize">Disk Size <span class="hint">(total tracks)</span></label>
+        <input type="number" id="diskSize" placeholder="e.g. 200" min="2" max="9999" />
+      </div>
+
+      <div class="field-group">
+        <label for="headPos">Initial Head Position</label>
+        <input type="number" id="headPos" placeholder="e.g. 53" min="0" />
+      </div>
+
+      <div class="field-group">
+        <label for="numReq">Number of Requests</label>
+        <input type="number" id="numReq" placeholder="e.g. 8" min="1" max="20" />
+      </div>
+
+      <div class="field-group">
+        <label for="requests">
+          Request Queue
+          <span class="hint">(space or comma separated)</span>
+        </label>
+        <textarea id="requests" rows="3" placeholder="e.g. 98 183 37 122 14 65 67 124"></textarea>
+      </div>
+
+      <div id="errorBox" class="error-box hidden"></div>
+
+      <!-- Algorithm Buttons -->
+      <div class="algo-buttons">
+        <button class="btn-algo" data-algo="FCFS">
+          <span class="btn-label">FCFS</span>
+          <span class="btn-sub">First Come First Served</span>
+        </button>
+        <button class="btn-algo" data-algo="SSTF">
+          <span class="btn-label">SSTF</span>
+          <span class="btn-sub">Shortest Seek Time First</span>
+        </button>
+        <button class="btn-algo" data-algo="SCAN">
+          <span class="btn-label">SCAN</span>
+          <span class="btn-sub">Elevator Algorithm</span>
+        </button>
+        <button class="btn-algo" data-algo="LOOK">
+          <span class="btn-label">LOOK</span>
+          <span class="btn-sub">Optimized SCAN</span>
+        </button>
+      </div>
+
+      <button class="btn-reset" id="resetBtn">↺ Reset</button>
+    </section>
+
+    <!-- RIGHT: Results Panel -->
+    <section class="panel result-panel" id="resultPanel">
+
+      <!-- Placeholder shown before any algorithm runs -->
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder-icon">◎</div>
+        <p>Configure inputs on the left,<br/>then click an algorithm to simulate.</p>
+      </div>
+
+      <!-- Results (hidden until algo runs) -->
+      <div id="results" class="hidden">
+
+        <!-- Algorithm name + seek time -->
+        <div class="result-header">
+          <div>
+            <div class="result-algo-name" id="resAlgoName">FCFS</div>
+            <div class="result-algo-full" id="resAlgoFull">First Come First Served</div>
+          </div>
+          <div class="seek-badge">
+            <div class="seek-label">Total Seek Time</div>
+            <div class="seek-value" id="resSeekTime">0</div>
+          </div>
+        </div>
+
+        <!-- Execution order -->
+        <div class="result-section">
+          <h3 class="section-label">Execution Order</h3>
+          <div class="order-track" id="resOrder"></div>
+        </div>
+
+        <!-- Canvas visualization -->
+        <div class="result-section">
+          <h3 class="section-label">Head Movement Graph</h3>
+          <div class="canvas-wrap">
+            <canvas id="diskCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Step-by-step table -->
+        <div class="result-section">
+          <h3 class="section-label">Step-by-Step Breakdown</h3>
+          <div class="table-wrap">
+            <table class="steps-table">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Distance</th>
+                </tr>
+              </thead>
+              <tbody id="stepsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Comparison bar (shown after at least 2 algos run) -->
+  <section class="compare-section hidden" id="compareSection">
+    <h2 class="compare-title">Algorithm Comparison</h2>
+    <div class="compare-bars" id="compareBars"></div>
+  </section>
+
+  <footer class="site-footer">
+    Disk Scheduling Simulator &mdash; Operating Systems Project
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
