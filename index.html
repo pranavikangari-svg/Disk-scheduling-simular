@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Disk Scheduling Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- ── Background grid decoration ── -->
+  <div class="bg-grid"></div>
+
+  <div class="container">
+
+    <!-- ════ HEADER ════ -->
+    <header class="header">
+      <div class="header-badge">OS Lab Project</div>
+      <h1 class="title">
+        <span class="title-disk">DISK</span>
+        <span class="title-sched">SCHEDULING</span>
+        <span class="title-sim">SIMULATOR</span>
+      </h1>
+      <p class="subtitle">C Logic · Web Visualization · Four Algorithms</p>
+    </header>
+
+    <!-- ════ INFO BANNER ════ -->
+    <div class="info-banner">
+      <span class="info-icon">ⓘ</span>
+      <span>The scheduling logic is implemented in <strong>C (disk.c)</strong> and mirrored here in JavaScript for browser simulation. Both produce identical results.</span>
+    </div>
+
+    <!-- ════ INPUT PANEL ════ -->
+    <section class="panel input-panel">
+      <h2 class="panel-title"><span class="panel-num">01</span> Configuration</h2>
+
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="diskSize">Disk Size <span class="hint">(max cylinders)</span></label>
+          <input type="number" id="diskSize" value="200" min="10" max="10000" />
+        </div>
+        <div class="input-group">
+          <label for="headPos">Initial Head Position</label>
+          <input type="number" id="headPos" value="50" min="0" />
+        </div>
+        <div class="input-group full-width">
+          <label for="requests">Request Queue <span class="hint">(comma or space separated)</span></label>
+          <input type="text" id="requests" value="82, 170, 43, 140, 24, 16, 190" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ ALGORITHM BUTTONS ════ -->
+    <section class="panel algo-panel">
+      <h2 class="panel-title"><span class="panel-num">02</span> Choose Algorithm</h2>
+
+      <div class="algo-grid">
+        <button class="algo-btn" data-algo="fcfs" onclick="runAlgorithm('fcfs')">
+          <span class="algo-abbr">FCFS</span>
+          <span class="algo-full">First Come First Serve</span>
+          <span class="algo-desc">Simplest · No reordering</span>
+        </button>
+        <button class="algo-btn" data-algo="sstf" onclick="runAlgorithm('sstf')">
+          <span class="algo-abbr">SSTF</span>
+          <span class="algo-full">Shortest Seek Time First</span>
+          <span class="algo-desc">Nearest request first</span>
+        </button>
+        <button class="algo-btn" data-algo="scan" onclick="runAlgorithm('scan')">
+          <span class="algo-abbr">SCAN</span>
+          <span class="algo-full">Elevator Algorithm</span>
+          <span class="algo-desc">Sweeps to disk end</span>
+        </button>
+        <button class="algo-btn" data-algo="look" onclick="runAlgorithm('look')">
+          <span class="algo-abbr">LOOK</span>
+          <span class="algo-full">Optimized SCAN</span>
+          <span class="algo-desc">No end-of-disk travel</span>
+        </button>
+        <button class="algo-btn run-all-btn" onclick="runAll()">
+          <span class="algo-abbr">ALL</span>
+          <span class="algo-full">Compare All Algorithms</span>
+          <span class="algo-desc">Side-by-side results</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ════ RESULTS ════ -->
+    <section class="panel results-panel" id="resultsPanel" style="display:none;">
+      <h2 class="panel-title"><span class="panel-num">03</span> Results</h2>
+      <div id="resultsContainer"></div>
+    </section>
+
+    <!-- ════ VISUALIZATION ════ -->
+    <section class="panel viz-panel" id="vizPanel" style="display:none;">
+      <h2 class="panel-title"><span class="panel-num">04</span> Seek Path Visualization</h2>
+      <div class="canvas-wrapper">
+        <canvas id="seekCanvas"></canvas>
+      </div>
+      <div class="viz-legend">
+        <span class="legend-dot start"></span> Start (Head)
+        <span class="legend-dot stop"></span> Request
+        <span class="legend-dot end"></span> End
+      </div>
+    </section>
+
+    <!-- ════ FOOTER ════ -->
+    <footer class="footer">
+      <p>C source: <code>disk.c</code> &nbsp;·&nbsp; Compile: <code>gcc disk.c -o disk && ./disk</code></p>
+    </footer>
+
+  </div><!-- /container -->
+
+  <script src="script.js"></script>
+</body>
+</html>
